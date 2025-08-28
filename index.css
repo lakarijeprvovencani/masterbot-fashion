@@ -657,32 +657,89 @@ select:focus {
 
 /* Disclaimer */
 .disclaimer {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   padding: 16px 20px;
   margin: 24px 20px 20px 20px;
-  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-.disclaimer p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #000000;
-  font-style: italic;
-  font-weight: 400;
+.disclaimer-content {
+  max-width: 100%;
 }
 
-.disclaimer strong {
+.disclaimer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.disclaimer-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.disclaimer-header strong {
   font-weight: 600;
   color: #1a1a1a;
   font-style: normal;
+  font-size: 16px;
+}
+
+.disclaimer-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  font-style: italic;
+  font-weight: 400;
+  text-align: center;
 }
 
 .disclaimer em {
   color: #333333;
   font-weight: 500;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+  .disclaimer {
+    margin: 15px;
+    padding: 14px;
+  }
+  
+  .disclaimer-header {
+    margin-bottom: 10px;
+  }
+  
+  .disclaimer-header strong {
+    font-size: 15px;
+  }
+  
+  .disclaimer-text {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  .disclaimer {
+    margin: 10px;
+    padding: 12px;
+  }
+  
+  .disclaimer-header strong {
+    font-size: 14px;
+  }
+  
+  .disclaimer-text {
+    font-size: 12px;
+  }
 }
 
 /* History Screen Styles - Modern Design for Light Background */

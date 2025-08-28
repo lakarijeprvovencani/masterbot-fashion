@@ -1102,8 +1102,16 @@ const renderTryOnScreen = () => {
     </div>
     
     <div class="disclaimer">
-      <p><strong>💎 Masterbot AI Fashion</strong> vodi računa o detaljima i na to smo izuzetno ponosni.<br>
-      Ipak, veštačka inteligencija može ponekad da pogreši – <em>slobodno pokušajte ponovo sa jasnijom fotografijom</em> da biste dobili bolji rezultat.</p>
+      <div class="disclaimer-content">
+        <div class="disclaimer-header">
+          <span class="disclaimer-icon">💎</span>
+          <strong>Masterbot AI Fashion</strong>
+        </div>
+        <p class="disclaimer-text">
+          vodi računa o detaljima i na to smo izuzetno ponosni.<br>
+          Ipak, veštačka inteligencija može ponekad da pogreši – <em>slobodno pokušajte ponovo sa jasnijom fotografijom</em> da biste dobili bolji rezultat.
+        </p>
+      </div>
     </div>`;
 
     document.getElementById('back-btn')?.addEventListener('click', () => setState({ view: 'home' }));
@@ -1196,8 +1204,16 @@ const renderAIModelScreen = () => {
     </div>
     
     <div class="disclaimer">
-      <p><strong>💎 Masterbot AI Fashion</strong> vodi računa o detaljima i na to smo izuzetno ponosni.<br>
-      Ipak, veštačka inteligencija može ponekad da pogreši – <em>slobodno pokušajte ponovo sa jasnijim opisom</em> da biste dobili bolji rezultat.</p>
+      <div class="disclaimer-content">
+        <div class="disclaimer-header">
+          <span class="disclaimer-icon">💎</span>
+          <strong>Masterbot AI Fashion</strong>
+        </div>
+        <p class="disclaimer-text">
+          vodi računa o detaljima i na to smo izuzetno ponosni.<br>
+          Ipak, veštačka inteligencija može ponekad da pogreši – <em>slobodno pokušajte ponovo sa jasnijim opisom</em> da biste dobili bolji rezultat.
+        </p>
+      </div>
     </div>`;
 
     document.getElementById('back-btn')?.addEventListener('click', () => setState({ view: 'home' }));
