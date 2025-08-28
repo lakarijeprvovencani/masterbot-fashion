@@ -265,7 +265,7 @@ const showScanningPopup = async (clothingImages: Array<{ base64: string, mimeTyp
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
   `;
 
-  // Background with clothing images
+  // Background with images (supports 1 or 2 images)
   const background = document.createElement('div');
   background.style.cssText = `
     position: absolute;
@@ -280,16 +280,36 @@ const showScanningPopup = async (clothingImages: Array<{ base64: string, mimeTyp
   `;
 
   if (clothingImages.length > 0) {
-    const img = document.createElement('img');
-    img.src = `data:${clothingImages[0].mimeType};base64,${clothingImages[0].base64}`;
-    img.style.cssText = `
-      width: 80%;
-      height: 80%;
+    const first = document.createElement('img');
+    first.src = `data:${clothingImages[0].mimeType};base64,${clothingImages[0].base64}`;
+    first.style.cssText = `
+      position: absolute;
+      width: 65%;
+      height: 65%;
       object-fit: cover;
       border-radius: 15px;
-      opacity: 0.3;
+      opacity: 0.25;
+      transform: rotate(-6deg);
+      top: 10%;
+      left: 8%;
     `;
-    background.appendChild(img);
+    background.appendChild(first);
+  }
+  if (clothingImages.length > 1) {
+    const second = document.createElement('img');
+    second.src = `data:${clothingImages[1].mimeType};base64,${clothingImages[1].base64}`;
+    second.style.cssText = `
+      position: absolute;
+      width: 65%;
+      height: 65%;
+      object-fit: cover;
+      border-radius: 15px;
+      opacity: 0.25;
+      transform: rotate(6deg);
+      bottom: 10%;
+      right: 8%;
+    `;
+    background.appendChild(second);
   }
 
   // Animation container - centered
@@ -537,13 +557,25 @@ const generateVirtualTryOn = async () => {
     return;
   }
   
-  setState({ error: null, isLoading: true, resultImage: null, resultVideoUrl: null, currentHistoryId: null });
+  // Use branded scanning popup (user + clothing images)
+  const imagesForPopup = [
+    { base64: state.userImage.base64, mimeType: state.userImage.mimeType },
+    { base64: state.clothingImage.base64, mimeType: state.clothingImage.mimeType }
+  ];
+  const scanningPopup = await showScanningPopup(imagesForPopup);
+  setState({ error: null, resultImage: null, resultVideoUrl: null });
 
   try {
+    scanningPopup.updateStatus('Masterbot analizira fotografiju...');
+
     const userImagePart = { inlineData: { data: state.userImage.base64, mimeType: state.userImage.mimeType } };
     const clothingImagePart = { inlineData: { data: state.clothingImage.base64, mimeType: state.clothingImage.mimeType } };
     const systemInstruction = 'IMPORTANT: Do not add, remove, or modify any clothing items, logos, text, patterns, or details on the clothing. Keep all garments exactly as shown in the provided images. Do not add brand logos, text overlays, or any decorative elements that are not already present. Preserve the original design, colors, and details of each clothing item precisely.';
     const textPart = { text: `Take the clothing from the second image and realistically place it onto the person in the first image. The final image should only show the person wearing the new clothing in the original setting. ${systemInstruction}` };
+
+    // Small delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+    scanningPopup.updateStatus('Masterbot kreira model...');
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image-preview',
@@ -557,24 +589,31 @@ const generateVirtualTryOn = async () => {
       },
     });
     
+    scanningPopup.updateStatus('Sve spremno! 🎉');
+
     const imagePart = response.candidates?.[0]?.content?.parts.find(part => part.inlineData);
     if (imagePart?.inlineData) {
       const base64Image = imagePart.inlineData.data;
       const resultImageData = `data:image/png;base64,${base64Image}`;
-      setState({ resultImage: resultImageData });
-      
-      // Save lightweight record to history (only the result image) to avoid localStorage quota issues
-      addToHistory({
-        type: 'try-on',
-        result: resultImageData
-      });
+
+      // Close popup slightly later to feel smoother
+      setTimeout(() => {
+        scanningPopup.close();
+        setState({ resultImage: resultImageData });
+        
+        // Save to history (lightweight)
+        addToHistory({
+          type: 'try-on',
+          result: resultImageData
+        });
+      }, 1200);
     } else {
+      scanningPopup.close();
       throw new Error('Masterbot nije uspeo realizaciju. Molimo pokušajte ponovo ili unesite precizniji opis.');
     }
   } catch (err) {
+      scanningPopup.close();
       setState({ error: getFriendlyErrorMessage(err) });
-  } finally {
-    setState({ isLoading: false });
   }
 };
 
@@ -1012,7 +1051,7 @@ const renderTryOnScreen = () => {
         </div>
         
         <div class="info-section" style="background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid #e9ecef;">
-            <img src="/assets/fashionsiluetea.png" alt="Fashion silhouette" style="width: 60px; height: 60px; object-fit: contain; flex-shrink: 0;">
+            <img src="/assets/fashionsiluetea.png" alt="Fashion silhouette" style="width: 60px; height: 120px; object-fit: contain; flex-shrink: 0;">
             <div style="flex: 1;">
                 <h4 style="margin: 0 0 6px 0; color: #2c3e50; font-size: 14px; font-weight: 600;">💡 Savet za najbolji rezultat</h4>
                 <p style="margin: 0; color: #5a6c7d; font-size: 13px; line-height: 1.4;">Najbolji rezultat generisanja se dobija ako je slika modela u donjem vešu.</p>
@@ -1033,8 +1072,7 @@ const renderTryOnScreen = () => {
             <label for="clothing-image" class="file-input-label ${clothingImagePreview ? 'has-image' : ''}" id="clothing-image-dropzone">
                  ${clothingImagePreview 
                     ? `<img src="${clothingImagePreview}" class="image-preview" alt="Pregled odeće">` 
-                    : '<div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="m14.41 4.59-2.83 2.82L10.17 6 6 10.17l1.41 1.41 2.82-2.83 1.42 1.42-4.24 4.24-1.42-1.41L10.17 8 8.76 6.59 4.59 10.76l1.41 1.41L8.83 9.34l1.41 1.41-2.83 2.82L6 15.01l4.17 4.17 4.17-4.17-1.41-1.41-2.83 2.82-1.41-1.41 4.24-4.24 1.41 1.41 2.83-2.82-1.42-1.42-2.82 2.83-1.41-1.42 4.24-4.24 1.41 1.41L15.01 6l4.17 4.17-4.17 4.17-1.41-1.42 2.83-2.82-1.42-1.41-4.24 4.24-4.24-4.24-1.41 1.41 2.82 2.83 1.42-1.42 2.82-2.83 1.41 1.41-4.24 4.24-1.41-1.41-2.82 2.83L8.75 17.4l-4.16-4.17L8.76 9.06l1.41 1.41 2.83-2.83-1.42-1.41-2.82 2.83L7.35 7.65 3.18 11.82l4.17 4.17 1.41-1.41-2.82-2.83 1.41-1.41 4.24 4.24 4.24-4.24 1.41 1.41-2.83 2.82 1.42 1.41 2.83-2.82 1.41 1.41-4.24 4.24 4.17-4.17 4.16-4.17-4.16-4.17-4.17 4.17Z"/></svg><span>Dodaj fotografiju odeće<br><small style="opacity: 0.7;">ili prevuci sliku ovde</small></span></div>'
-                }
+                    : '<div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.45a1 1 0 0 0 .94.86h13.4c.56 0 1.03-.44 1.08-.99l.58-3.45a2 2 0 0 0-1.34-2.23z"></path><path d="M4 10h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10z"></path></svg><span>Dodaj fotografiju odeće<br><small style="opacity: 0.7;">ili prevuci sliku ovde</small></span></div>'}
                 <input type="file" id="clothing-image" accept="image/*">
             </label>
         </div>
