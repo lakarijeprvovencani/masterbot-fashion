@@ -279,7 +279,8 @@ const showScanningPopup = async (clothingImages: Array<{ base64: string, mimeTyp
     justify-content: center;
   `;
 
-  if (clothingImages.length > 0) {
+  if (clothingImages.length === 1) {
+    // Virtual Try-On: 1 image rotated (keep original behavior)
     const first = document.createElement('img');
     first.src = `data:${clothingImages[0].mimeType};base64,${clothingImages[0].base64}`;
     first.style.cssText = `
@@ -294,22 +295,24 @@ const showScanningPopup = async (clothingImages: Array<{ base64: string, mimeTyp
       left: 8%;
     `;
     background.appendChild(first);
-  }
-  if (clothingImages.length > 1) {
-    const second = document.createElement('img');
-    second.src = `data:${clothingImages[1].mimeType};base64,${clothingImages[1].base64}`;
-    second.style.cssText = `
-      position: absolute;
-      width: 65%;
-      height: 65%;
-      object-fit: cover;
-      border-radius: 15px;
-      opacity: 0.25;
-      transform: rotate(6deg);
-      bottom: 10%;
-      right: 8%;
-    `;
-    background.appendChild(second);
+  } else if (clothingImages.length > 1) {
+    // AI Model: Multiple images centered without rotation
+    clothingImages.forEach((img, index) => {
+      const imgEl = document.createElement('img');
+      imgEl.src = `data:${img.mimeType};base64,${img.base64}`;
+      imgEl.style.cssText = `
+        position: absolute;
+        width: 45%;
+        height: 45%;
+        object-fit: cover;
+        border-radius: 15px;
+        opacity: 0.2;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) translate(${index * 20 - 10}px, ${index * 15 - 7}px);
+      `;
+      background.appendChild(imgEl);
+    });
   }
 
   // Animation container - centered
@@ -1157,7 +1160,7 @@ const renderAIModelScreen = () => {
         <button class="btn-back" id="back-btn">&larr; Nazad na početnu</button>
         <div class="panel-header">
             <h2>Generiši AI modela</h2>
-            <p>Dodajte odeću, akcesoare i druge elemente i opišite modela koga želite da vidite.</p>
+            <p>Dodajte odeću, aksesoare i druge elemente i opišite modela koga želite da vidite.</p>
         </div>
         
         <div class="input-group" id="ai-clothing-input-group">
