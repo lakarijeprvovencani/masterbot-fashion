@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai'
 // Gemini API key - trebao bi biti u .env fajlu
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyBLmGV7kgxDjIjXVDZ6Y7QK3HyMQJZFKV0'
 
-const genAI = new GoogleGenAI({ apiKey: API_KEY })
+const client = new GoogleGenAI({ apiKey: API_KEY })
 
 interface GenerateModelOptions {
   prompt: string
@@ -21,16 +21,10 @@ export const generateFashionModel = async (options: GenerateModelOptions): Promi
     The model should be suitable for fashion design and clothing presentation.`
     
     // Korišćenje Gemini 2.5 Flash IMAGE modela za generisanje slika
-    const model = genAI.getGenerativeModel({ 
+    const result = await client.models.generateContent({
       model: 'gemini-2.5-flash-image',
-    })
-    
-    const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{ text: enhancedPrompt }]
-      }],
-      generationConfig: {
+      contents: enhancedPrompt,
+      config: {
         responseModalities: ['Image'],
         imageConfig: {
           aspectRatio: aspectRatio
@@ -68,28 +62,22 @@ export const analyzeUploadedImage = async (imageFile: File): Promise<{
     // Konvertovanje slike u base64
     const base64Image = await fileToBase64(imageFile)
     
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash'
-    })
-    
     const prompt = `Analyze this image for fashion modeling purposes. 
     Describe the person's appearance, pose, and suitability for fashion modeling.
     Provide suggestions for how to best use this as a fashion model.
     Keep the response concise and professional.`
     
-    const result = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: prompt },
-          { 
-            inlineData: {
-              mimeType: imageFile.type,
-              data: base64Image.split(',')[1]
-            }
+    const result = await client.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        { text: prompt },
+        { 
+          inlineData: {
+            mimeType: imageFile.type,
+            data: base64Image.split(',')[1]
           }
-        ]
-      }]
+        }
+      ]
     })
     
     const response = result.response
