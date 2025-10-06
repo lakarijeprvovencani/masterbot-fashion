@@ -20,9 +20,9 @@ export const generateFashionModel = async (options: GenerateModelOptions): Promi
     full body shot, fashion runway quality, high resolution, photorealistic.
     The model should be suitable for fashion design and clothing presentation.`
     
-    // Korišćenje Gemini 2.0 Flash image generation modela
+    // Korišćenje Gemini 2.5 Flash Pro modela
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
     })
     
     const result = await model.generateContent({
@@ -38,9 +38,9 @@ export const generateFashionModel = async (options: GenerateModelOptions): Promi
       }
     })
     
-    // Za sada vraćamo placeholder jer Gemini 2.0 Flash Exp ne podržava direktno generisanje slika
-    // Trebalo bi koristiti drugi API kao Imagen ili DALL-E za generisanje slika
-    // Ili možete koristiti Gemini Vision API za analizu i opis modela
+    // Gemini 2.5 Flash ne podržava direktno generisanje slika
+    // Trebalo bi koristiti Imagen 3 API ili drugi image generation API
+    // Za sada vraćamo placeholder
     
     const response = result.response
     const text = response.text()
@@ -66,7 +66,7 @@ export const analyzeUploadedImage = async (imageFile: File): Promise<{
     const base64Image = await fileToBase64(imageFile)
     
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp'
+      model: 'gemini-2.5-flash'
     })
     
     const prompt = `Analyze this image for fashion modeling purposes. 
