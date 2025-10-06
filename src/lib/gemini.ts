@@ -20,9 +20,9 @@ export const generateFashionModel = async (options: GenerateModelOptions): Promi
     full body shot, fashion runway quality, high resolution, photorealistic.
     The model should be suitable for fashion design and clothing presentation.`
     
-    // Korišćenje Gemini 2.5 Flash Pro modela
+    // Korišćenje Gemini 2.5 Flash IMAGE modela za generisanje slika
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-image',
     })
     
     const result = await model.generateContent({
@@ -31,29 +31,32 @@ export const generateFashionModel = async (options: GenerateModelOptions): Promi
         parts: [{ text: enhancedPrompt }]
       }],
       generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 2048,
+        responseModalities: ['Image'],
+        imageConfig: {
+          aspectRatio: aspectRatio
+        }
       }
     })
     
-    // Gemini 2.5 Flash ne podržava direktno generisanje slika
-    // Trebalo bi koristiti Imagen 3 API ili drugi image generation API
-    // Za sada vraćamo placeholder
-    
     const response = result.response
-    const text = response.text()
     
-    console.log('Gemini response:', text)
+    // Pronalaženje inline data (slike) u odgovoru
+    for (const candidate of response.candidates || []) {
+      for (const part of candidate.content?.parts || []) {
+        if (part.inlineData) {
+          // Kreiranje base64 data URL-a od inline slike
+          const base64Data = part.inlineData.data
+          const mimeType = part.inlineData.mimeType || 'image/png'
+          return `data:${mimeType};base64,${base64Data}`
+        }
+      }
+    }
     
-    // Privremeno vraćamo placeholder sliku
-    // U produkciji biste koristili stvarni image generation API
-    return `https://via.placeholder.com/400x600/667eea/ffffff?text=${encodeURIComponent(prompt.substring(0, 30))}`
+    throw new Error('No image generated in response')
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating fashion model:', error)
-    throw new Error('Failed to generate fashion model. Please try again.')
+    throw new Error(error.message || 'Failed to generate fashion model. Please try again.')
   }
 }
 

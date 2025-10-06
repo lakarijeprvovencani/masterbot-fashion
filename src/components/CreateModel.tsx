@@ -337,12 +337,18 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
                     src={generatedModel.imageUrl} 
                     alt="Generated Model" 
                     style={{
-                      maxWidth: '300px', 
-                      maxHeight: '400px', 
+                      maxWidth: '100%',
+                      maxHeight: '500px', 
                       borderRadius: '10px',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                      objectFit: 'contain'
                     }} 
                   />
+                  {generatedModel.prompt && (
+                    <p style={{marginTop: '10px', fontSize: '12px', color: '#718096', fontStyle: 'italic'}}>
+                      "{generatedModel.prompt}"
+                    </p>
+                  )}
                 </div>
               )}
 
