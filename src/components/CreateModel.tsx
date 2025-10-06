@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { generateFashionModel, analyzeUploadedImage } from '../lib/gemini'
 
 interface CreateModelProps {
   onBack?: () => void
@@ -10,12 +11,14 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
   const { user } = useAuth()
   const [selectedOption, setSelectedOption] = useState<'ai' | 'upload' | null>(null)
   const [modelName, setModelName] = useState('')
+  const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [generatedModel, setGeneratedModel] = useState<any>(null)
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [imageAnalysis, setImageAnalysis] = useState<string>('')
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -27,24 +30,33 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
   }
 
   const generateAIModel = async () => {
+    if (!prompt.trim()) {
+      setError('Please enter a description for your model')
+      return
+    }
+    
     setLoading(true)
     setError('')
     
     try {
-      // Simulacija AI generacije - ovde ćete dodati stvarni API poziv
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Korišćenje Gemini API-ja za generisanje modela
+      const imageUrl = await generateFashionModel({
+        prompt: prompt,
+        aspectRatio: '9:16'
+      })
       
       const mockModel = {
         id: Date.now().toString(),
-        imageUrl: 'https://via.placeholder.com/400x600/667eea/ffffff?text=AI+Generated+Model',
+        imageUrl: imageUrl,
         type: 'ai_generated',
+        prompt: prompt,
         createdAt: new Date().toISOString()
       }
       
       setGeneratedModel(mockModel)
       setSuccess(true)
-    } catch (err) {
-      setError('Failed to generate AI model. Please try again.')
+    } catch (err: any) {
+      setError(err.message || 'Failed to generate AI model. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -57,6 +69,10 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
     setError('')
     
     try {
+      // Prvo analiziraj sliku sa Gemini API-jem
+      const analysis = await analyzeUploadedImage(uploadedImage)
+      setImageAnalysis(analysis.description)
+      
       // Upload slike na Supabase Storage
       const fileExt = uploadedImage.name.split('.').pop()
       const fileName = `${user.id}-${Date.now()}.${fileExt}`
@@ -76,13 +92,14 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
         id: Date.now().toString(),
         imageUrl: publicUrl,
         type: 'uploaded',
+        analysis: analysis.description,
         createdAt: new Date().toISOString()
       }
       
       setGeneratedModel(processedModel)
       setSuccess(true)
-    } catch (err) {
-      setError('Failed to process uploaded image. Please try again.')
+    } catch (err: any) {
+      setError(err.message || 'Failed to process uploaded image. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -193,8 +210,24 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
               <div className="welcome-card">
                 <h2>Generate AI Model</h2>
                 <p style={{marginBottom: '20px', color: '#718096'}}>
-                  Click the button below to generate a new AI fashion model. This process may take a few moments.
+                  Describe the type of fashion model you want to create. Be specific about features, style, pose, and appearance.
                 </p>
+                
+                <div className="form-group">
+                  <label htmlFor="model-prompt" className="form-label">Model Description</label>
+                  <textarea
+                    id="model-prompt"
+                    className="form-input"
+                    placeholder="e.g., A tall female model with long dark hair, wearing elegant pose, professional studio lighting, modern fashion style..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={4}
+                    style={{resize: 'vertical', minHeight: '100px'}}
+                  />
+                  <p style={{fontSize: '12px', color: '#a0aec0', marginTop: '5px'}}>
+                    💡 Tip: The more detailed your description, the better the results!
+                  </p>
+                </div>
                 
                 {error && <div className="alert alert-error">{error}</div>}
                 
@@ -202,7 +235,7 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
                   <button 
                     onClick={generateAIModel} 
                     className="btn btn-primary" 
-                    disabled={loading}
+                    disabled={loading || !prompt.trim()}
                     style={{width: 'auto', padding: '15px 30px'}}
                   >
                     {loading ? 'Generating AI Model...' : 'Generate AI Model'}
@@ -212,7 +245,7 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
                 {loading && (
                   <div style={{textAlign: 'center'}}>
                     <div className="spinner" style={{margin: '0 auto'}}></div>
-                    <p style={{marginTop: '10px', color: '#718096'}}>Creating your AI model...</p>
+                    <p style={{marginTop: '10px', color: '#718096'}}>Creating your AI model with Gemini 2.5 Flash...</p>
                   </div>
                 )}
 
@@ -256,6 +289,13 @@ const CreateModel: React.FC<CreateModelProps> = ({ onBack }) => {
                         boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                       }} 
                     />
+                  </div>
+                )}
+
+                {imageAnalysis && (
+                  <div className="info-box" style={{marginTop: '20px'}}>
+                    <h3>AI Analysis</h3>
+                    <p style={{fontSize: '14px', lineHeight: '1.6'}}>{imageAnalysis}</p>
                   </div>
                 )}
 
