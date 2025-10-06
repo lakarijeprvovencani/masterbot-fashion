@@ -1,32 +1,41 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { db } from '../lib/supabase'
+import CreateModel from './CreateModel'
 
 const Dashboard: React.FC = () => {
   const { user, signOut } = useAuth()
   const [hasModels, setHasModels] = useState(false)
   const [modelsCount, setModelsCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [currentView, setCurrentView] = useState<'dashboard' | 'create-model' | 'dress-model'>('dashboard')
 
-  useEffect(() => {
-    const checkUserModels = async () => {
-      if (user) {
-        try {
-          const { data: hasModelsData } = await db.userHasModels(user.id)
-          const { count } = await db.getUserModelsCount(user.id)
-          
-          setHasModels(hasModelsData)
-          setModelsCount(count)
-        } catch (error) {
-          console.error('Error checking user models:', error)
-        } finally {
-          setLoading(false)
-        }
+  const checkUserModels = async () => {
+    if (user) {
+      try {
+        const { data: hasModelsData } = await db.userHasModels(user.id)
+        const { count } = await db.getUserModelsCount(user.id)
+        
+        setHasModels(hasModelsData)
+        setModelsCount(count)
+      } catch (error) {
+        console.error('Error checking user models:', error)
+      } finally {
+        setLoading(false)
       }
     }
+  }
 
+  useEffect(() => {
     checkUserModels()
   }, [user])
+
+  // Refresh when coming back from create model
+  useEffect(() => {
+    if (currentView === 'dashboard') {
+      checkUserModels()
+    }
+  }, [currentView])
 
   const handleSignOut = async () => {
     await signOut()
@@ -41,6 +50,10 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     )
+  }
+
+  if (currentView === 'create-model') {
+    return <CreateModel onBack={() => setCurrentView('dashboard')} />
   }
 
   return (
@@ -81,7 +94,7 @@ const Dashboard: React.FC = () => {
             </div>
             <h3>Create Model</h3>
             <p>Generate a new fashion model using AI</p>
-            <button className="btn-action primary">
+            <button className="btn-action primary" onClick={() => setCurrentView('create-model')}>
               Create New Model
             </button>
           </div>
